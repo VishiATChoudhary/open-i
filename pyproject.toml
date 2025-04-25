@@ -1,0 +1,18 @@
+[project]
+name = "open-i"
+version = "0.1.0"
+description = ""
+authors = [
+    {name = "VishiATChoudhary",email = "vishisht.choudhary@rwth-aachen.de"}
+]
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "openai (>=1.76.0,<2.0.0)",
+    "dotenv (>=0.9.9,<0.10.0)"
+]
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
