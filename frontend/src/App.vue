@@ -1,5 +1,7 @@
 <template>
-  <div>
-    <h1>Hello World</h1>
-  </div>
+  <WebcamStream />
 </template>
+
+<script setup>
+import WebcamStream from './components/WebcamStream.vue'
+</script>
