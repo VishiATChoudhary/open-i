@@ -8,11 +8,7 @@
     </div>
 
     <!-- Features panel -->
-    <div class="absolute top-1/2 right-8 -translate-y-1/2 w-100">
-      <!-- Background gradient -->
-      <div class="absolute inset-0 rounded-3xl bg-gradient-to-b from-[#FAF9F6] to-[#FAF9F6]/20"></div>
-      
-      <!-- Content -->
+    <div class="absolute top-1/2 right-8 -translate-y-1/2 w-100 bg-[#FAF9F6] rounded-3xl">
       <div class="relative px-6 py-4">
         <h2 class="text-xl font-semibold mb-2 text-center">Features</h2>
         <div class="space-y-3">

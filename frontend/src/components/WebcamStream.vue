@@ -1,6 +1,6 @@
 <template>
   <div class="fixed inset-0 w-screen h-screen overflow-hidden">
-    <video ref="videoElement" class="w-full h-full object-cover" autoplay playsinline></video>
+    <video ref="videoElement" class="w-full h-full object-cover [transform:scaleX(-1)]" autoplay playsinline></video>
     <canvas ref="canvasElement" class="hidden"></canvas>
     <WebcamOverlay />
   </div>
@@ -27,7 +27,11 @@ const captureAndSendFrame = async () => {
   
   // Zeichne aktuelles Video-Frame auf Canvas
   const context = canvas.getContext('2d')
-  context.drawImage(video, 0, 0, canvas.width, canvas.height)
+  
+  // Spiegele das Bild auch beim Capturen
+  context.scale(-1, 1)
+  context.drawImage(video, -canvas.width, 0, canvas.width, canvas.height)
+  context.scale(-1, 1) // Setze die Transformation zurück
   
   try {
     // Konvertiere Canvas zu Blob und sende ans Backend
