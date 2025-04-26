@@ -8,19 +8,19 @@
     </div>
 
     <!-- Features panel -->
-    <div class="absolute top-1/2 right-8 -translate-y-1/2 h-[30vh] w-100">
+    <div class="absolute top-1/2 right-8 -translate-y-1/2 w-100">
       <!-- Background gradient -->
       <div class="absolute inset-0 rounded-3xl bg-gradient-to-b from-[#FAF9F6] to-[#FAF9F6]/20"></div>
       
       <!-- Content -->
-      <div class="relative h-full p-6">
-        <h2 class="text-xl font-semibold mb-4 text-center">Features</h2>
+      <div class="relative px-6 py-4">
+        <h2 class="text-xl font-semibold mb-2 text-center">Features</h2>
         <div class="space-y-3">
           <TransitionGroup name="message" tag="div">
             <div v-for="message in displayedMessages" 
                  :key="message.id"
                  class="flex justify-between items-center space-x-2">
-              <span class="text-gray-500">{{ message.text }}</span>
+              <span class="text-gray-800">{{ message.text }}</span>
               <span class="text-gray-400 font-mono">{{ message.timestamp }}</span>
             </div>
           </TransitionGroup>
