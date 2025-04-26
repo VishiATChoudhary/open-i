@@ -173,5 +173,13 @@ cython_debug/
 # PyPI configuration file
 .pypirc
 
-# Videos
-.MOV
+
+
+#Big file stuff
+*.mp4
+*.mp3
+*.jpg
+*.png
+*.gif
+*.jpeg
+*.webp
