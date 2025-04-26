@@ -7,6 +7,11 @@
       </div>
     </div>
 
+    <!-- Glasses overlay -->
+    <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+      <img src="../assets/glasses.svg" alt="Glasses" class="w-full" />
+    </div>
+
     <!-- Features panel -->
     <div class="absolute top-1/2 right-8 -translate-y-1/2 w-100 bg-[#FAF9F6] rounded-3xl">
       <div class="relative px-6 py-4">
@@ -23,12 +28,23 @@
         </div>
       </div>
     </div>
+
+    <!-- Bottom text -->
+    <div class="absolute bottom-8 left-1/2 -translate-x-1/2">
+      <p class="text-white text-2xl">
+        <TypewriterText 
+          text="Nächste Kreuzung rechts, um nach Hause zu kommen" 
+          :speed="20"
+        />
+      </p>
+    </div>
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue'
 import { messages } from '../data/dummyMessages'
+import TypewriterText from './TypewriterText.vue'
 
 const displayedMessages = ref([])
 let messageInterval = null
