@@ -18,7 +18,7 @@ def get_weather(city: str) -> str:
     return f"The weather in {city} is {random.choice(choices)}."
 
 model = "gpt-4.1-nano-2025-04-14"
-
+model = "gpt-4o-mini-audio-preview-2024-12-17"
 #german_agent = Agent(
 #    name="German",
 #    handoff_description="A German speaking agent.",
