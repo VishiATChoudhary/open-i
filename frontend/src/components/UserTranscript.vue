@@ -1,11 +1,8 @@
 <template>
   <div class="flex gap-4">
     <div class="flex-1 flex gap-4 items-center">
-      <div class="flex-1 bg-[#F3F3F3] rounded-full px-8 h-16 flex items-center">
-        {{ store.userTranscript }}
-      </div>
       <div 
-        class="w-16 h-16 bg-[#F3F3F3] rounded-full flex items-center justify-center"
+        class="w-16 h-32 bg-[#F3F3F3] rounded-full flex items-center justify-center"
         :class="{ 'bounce-animation': store.isUserSpeaking }"
       >
         <img src="../assets/user.svg" alt="User" class="w-10 h-10" />

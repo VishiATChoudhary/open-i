@@ -24,6 +24,14 @@
     >
       <span class="text-sm font-medium">{{ isAnalyzing ? 'Stop Analysis' : 'Start Analysis' }}</span>
     </button>
+
+    <!-- Voice Status -->
+    <div 
+      v-if="isAnalyzing"
+      class="absolute top-4 right-4 px-4 py-2 rounded-full bg-blue-500 text-white text-sm font-medium"
+    >
+      {{ isRecording ? 'Sprachaufnahme aktiv' : 'Sprachaufnahme gestartet...' }}
+    </div>
   </div>
 </template>
 
@@ -31,12 +39,14 @@
 import { ref, onMounted, onBeforeUnmount, watch } from 'vue'
 import frameAnalyzer from '../services/frameAnalyzer'
 import boundingBoxAnalyzer from '../services/boundingBoxAnalyzer'
+import voiceService from '../services/voiceService'
 import { useBoundingBoxStore } from '../stores/boundingBoxStore'
 
 const videoElement = ref(null)
 const canvasElement = ref(null)
 const overlayCanvas = ref(null)
 const isAnalyzing = ref(false)
+const isRecording = ref(false)
 const boundingBoxStore = useBoundingBoxStore()
 
 onMounted(async () => {
@@ -107,15 +117,23 @@ watch(() => boundingBoxStore.boxes, (newBoxes) => {
   drawBoundingBoxes()
 }, { deep: true })
 
-const toggleAnalysis = () => {
+const toggleAnalysis = async () => {
   if (isAnalyzing.value) {
     frameAnalyzer.stopAnalysis()
     boundingBoxAnalyzer.stopAnalysis()
     boundingBoxStore.$patch({ isBoundingBoxAnalysisEnabled: false })
+    await voiceService.stopRecording()
+    isRecording.value = false
   } else {
     frameAnalyzer.startAnalysis(canvasElement.value)
-    // boundingBoxStore.$patch({ isBoundingBoxAnalysisEnabled: true })
+    boundingBoxStore.$patch({ isBoundingBoxAnalysisEnabled: false })
     boundingBoxAnalyzer.startAnalysis(canvasElement.value)
+    try {
+      await voiceService.startRecording()
+      isRecording.value = true
+    } catch (error) {
+      console.error('Fehler beim Starten der Sprachaufnahme:', error)
+    }
   }
   isAnalyzing.value = !isAnalyzing.value
 }
@@ -123,6 +141,7 @@ const toggleAnalysis = () => {
 onBeforeUnmount(() => {
   frameAnalyzer.stopAnalysis()
   boundingBoxAnalyzer.stopAnalysis()
+  voiceService.stopRecording()
   
   // Stream beenden
   if (videoElement.value?.srcObject) {

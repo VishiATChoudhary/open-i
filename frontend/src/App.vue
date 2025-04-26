@@ -12,9 +12,9 @@
         <!-- Left Section: Video and Chat -->
         <div class="flex-1 flex flex-col mb-5">
           <VideoStream class="flex-[2]" />
-          <div class="flex-1 flex flex-col justify-center gap-8 mt-4 md:mt-0">
-            <UserTranscript />
+          <div class="flex-1 flex justify-center gap-8 mt-4 md:mt-0">
             <AITranscript />
+            <UserTranscript />
           </div>
         </div>
 
