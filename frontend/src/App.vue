@@ -33,46 +33,8 @@
 </template>
 
 <script setup>
-import { onMounted, onUnmounted } from 'vue'
-import { messages } from './data/dummyMessages'
-import { useTranscriptStore } from './stores/transcriptStore'
 import VideoStream from './components/VideoStream.vue'
 import UserTranscript from './components/UserTranscript.vue'
 import AITranscript from './components/AITranscript.vue'
 import History from './components/History.vue'
-
-const store = useTranscriptStore()
-let insightInterval = null
-
-// Generiert eine zufällige Zahl zwischen min und max
-const getRandomInterval = (min, max) => {
-  return Math.floor(Math.random() * (max - min + 1) + min) * 1000
-}
-
-// Fügt eine neue Erkenntnis hinzu
-const addRandomInsight = () => {
-  const randomInsight = messages[Math.floor(Math.random() * messages.length)]
-  store.addImageInsight(randomInsight)
-  
-  // Plant die nächste Erkenntnis
-  scheduleNextInsight()
-}
-
-// Plant die nächste Erkenntnis
-const scheduleNextInsight = () => {
-  insightInterval = setTimeout(() => {
-    addRandomInsight()
-  }, getRandomInterval(2, 6))
-}
-
-onMounted(() => {
-  // Starte mit einer Erkenntnis
-  addRandomInsight()
-})
-
-onUnmounted(() => {
-  if (insightInterval) {
-    clearTimeout(insightInterval)
-  }
-})
 </script>
