@@ -1,8 +1,9 @@
 <template>
   <div class="min-h-screen bg-white px-8 py-5">
     <!-- Logo -->
-    <div class="flex justify-center mb-4">
+    <div class="flex justify-center mb-4 items-center gap-2">
       <img src="./assets/logo.svg" alt="Logo" class="h-8" />
+      <span class="text-2xl font-semibold text-gray-800">Open i</span>
     </div>
 
     <!-- Main Content -->
