@@ -20,69 +20,59 @@
 
         <!-- Right Section: History (auf Mobile) -->
         <div class="block md:hidden w-full mb-5">
-          <History :messages="displayedMessages" />
+          <History />
         </div>
       </div>
 
       <!-- Right Section: History (auf Desktop) -->
       <div class="hidden md:block w-96 mb-5">
-        <History :messages="displayedMessages" />
+        <History />
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
+import { onMounted, onUnmounted } from 'vue'
 import { messages } from './data/dummyMessages'
+import { useTranscriptStore } from './stores/transcriptStore'
 import VideoStream from './components/VideoStream.vue'
 import UserTranscript from './components/UserTranscript.vue'
 import AITranscript from './components/AITranscript.vue'
 import History from './components/History.vue'
 
-const displayedMessages = ref([])
-let messageInterval = null
-
-// Formatiert einen Zeitstempel im Format HH:MM:SS
-const formatTime = (date) => {
-  return date.toTimeString().split(' ')[0]
-}
+const store = useTranscriptStore()
+let insightInterval = null
 
 // Generiert eine zufällige Zahl zwischen min und max
 const getRandomInterval = (min, max) => {
   return Math.floor(Math.random() * (max - min + 1) + min) * 1000
 }
 
-// Fügt eine neue Nachricht hinzu
-const addMessage = () => {
-  const randomMessage = messages[Math.floor(Math.random() * messages.length)]
-  const newMessage = {
-    id: Date.now(),
-    text: randomMessage,
-    timestamp: formatTime(new Date())
-  }
+// Fügt eine neue Erkenntnis hinzu
+const addRandomInsight = () => {
+  const randomInsight = messages[Math.floor(Math.random() * messages.length)]
+  store.addImageInsight(randomInsight)
   
-  displayedMessages.value.unshift(newMessage)
-  
-  // Plane die nächste Nachricht
-  scheduleNextMessage()
+  // Plant die nächste Erkenntnis
+  scheduleNextInsight()
 }
 
-// Plant die nächste Nachricht
-const scheduleNextMessage = () => {
-  messageInterval = setTimeout(() => {
-    addMessage()
-  }, getRandomInterval(2, 8))
+// Plant die nächste Erkenntnis
+const scheduleNextInsight = () => {
+  insightInterval = setTimeout(() => {
+    addRandomInsight()
+  }, getRandomInterval(2, 6))
 }
 
 onMounted(() => {
-  // Starte mit einer Nachricht
-  addMessage()
+  // Starte mit einer Erkenntnis
+  addRandomInsight()
 })
 
 onUnmounted(() => {
-  if (messageInterval) {
-    clearTimeout(messageInterval)
+  if (insightInterval) {
+    clearTimeout(insightInterval)
   }
 })
 </script>
