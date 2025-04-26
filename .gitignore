@@ -174,9 +174,13 @@ cython_debug/
 .pypirc
 
 
-# all mp4 files
+
+#Big file stuff
 *.mp4
-
-# all mp3 files
 *.mp3
-
+*.jpg
+*.png
+*.gif
+*.jpeg
+*.webp
+*.MOV
