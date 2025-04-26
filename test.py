@@ -1,7 +1,8 @@
 # Import necessary libraries and modules
 import os
-from openai import OpenAI
 import openai
+from openai import AsyncOpenAI
+from openai.helpers import LocalAudioPlayer
 import base64
 import requests
 import cv2
@@ -13,6 +14,16 @@ import threading
 import argparse
 from dotenv import load_dotenv
 import time
+import asyncio
+import aiohttp
+import websockets
+import json
+import pyaudio
+import wave
+import numpy as np
+from aiortc import RTCPeerConnection, RTCSessionDescription, RTCIceCandidate
+from aiortc.contrib.media import MediaPlayer, MediaRecorder
+import av
 
 # Load environment variables from .env file
 load_dotenv()
@@ -20,18 +31,67 @@ load_dotenv()
 # Set OpenAI API key from environment variable
 openai.api_key = os.getenv("OPENAI_API_KEY")
 # Initialize OpenAI client
-client = OpenAI()
+client = AsyncOpenAI()
 
-# Function to get description for a single image using OpenAI GPT-4 Vision model
-def current_frame_descriptions(image):
+# Audio configuration
+CHUNK = 1024
+FORMAT = 'int16'
+CHANNELS = 1
+RATE = 44100
+
+async def setup_webrtc():
+    """Set up WebRTC connection."""
+    pc = RTCPeerConnection()
+    
+    # Set up audio track
+    audio = MediaPlayer(
+        "default",  # Use default audio input
+        format="pulse",  # Use PulseAudio
+        options={
+            "channels": CHANNELS,
+            "rate": str(RATE),
+        }
+    )
+    
+    # Add audio track to peer connection
+    pc.addTrack(audio.audio)
+    
+    return pc, audio
+
+async def process_audio_stream(stream, websocket):
+    """Process audio stream and send to WebSocket."""
     try:
+        while True:
+            data = stream.read(CHUNK)
+            # Convert to numpy array for processing
+            audio_data = np.frombuffer(data, dtype=np.int16)
+            # Send audio data through WebSocket
+            await websocket.send(audio_data.tobytes())
+    except Exception as e:
+        print(f"Error in audio processing: {e}")
+
+async def handle_audio_response(websocket):
+    """Handle incoming audio responses from the model."""
+    try:
+        while True:
+            response = await websocket.recv()
+            # Play the received audio
+            audio_data = np.frombuffer(response, dtype=np.int16)
+            sd.play(audio_data, RATE)
+            sd.wait()
+    except Exception as e:
+        print(f"Error handling audio response: {e}")
+
+async def current_frame_descriptions(image):
+    try:
+        current_start_time = time.time()
         headers = {
             "Content-Type": "application/json",
             "Authorization": f"Bearer {openai.api_key}"
         }
 
         payload = {
-            "model": "gpt-4.1-nano",
+            "model": "gpt-4.1-nano-2025-04-14",
             "messages": [
                 {
                     "role": "user",
@@ -52,37 +112,38 @@ def current_frame_descriptions(image):
             "max_tokens": 300
         }
 
-        response = requests.post("https://api.openai.com/v1/chat/completions", 
-                              headers=headers, 
-                              json=payload,
-                              timeout=30)  # Added timeout
-        
-        if response.status_code != 200:
-            print(f"API Error: Status code {response.status_code}")
-            print(f"Response: {response.text}")
-            return None
-            
-        return response.json()['choices'][0]['message']['content']
-    except requests.exceptions.Timeout:
+        async with aiohttp.ClientSession() as session:
+            async with session.post("https://api.openai.com/v1/chat/completions", 
+                                  headers=headers, 
+                                  json=payload,
+                                  timeout=30) as response:
+                current_api_time = time.time() - current_start_time
+                
+                if response.status != 200:
+                    print(f"API Error: Status code {response.status}")
+                    response_text = await response.text()
+                    print(f"Response: {response_text}")
+                    return None, current_api_time
+                    
+                response_json = await response.json()
+                return response_json['choices'][0]['message']['content'], current_api_time
+    except asyncio.TimeoutError:
         print("API request timed out")
-        return None
-    except requests.exceptions.RequestException as e:
-        print(f"API request failed: {e}")
-        return None
+        return None, time.time() - current_start_time
     except Exception as e:
         print(f"Unexpected error in current_frame_descriptions: {e}")
-        return None
+        return None, time.time() - current_start_time
 
-# Function to get description for two consecutive images with contextual analysis
-def continous_frame_descriptions(prev_image, curr_image, preview):
+async def continous_frame_descriptions(prev_image, curr_image, preview):
     try:
+        continous_start_time = time.time()
         headers = {
             "Content-Type": "application/json",
             "Authorization": f"Bearer {openai.api_key}"
         }
 
         payload = {
-            "model": "gpt-4.1-nano",
+            "model": "gpt-4.1-nano-2025-04-14",
             "messages": [
                 {
                     "role": "user",
@@ -113,52 +174,67 @@ def continous_frame_descriptions(prev_image, curr_image, preview):
             "max_tokens": 300
         }
 
-        response = requests.post("https://api.openai.com/v1/chat/completions", 
-                              headers=headers, 
-                              json=payload,
-                              timeout=30)  # Added timeout
-        
-        if response.status_code != 200:
-            print(f"API Error: Status code {response.status_code}")
-            print(f"Response: {response.text}")
-            return None
-            
-        return response.json()['choices'][0]['message']['content']
-    except requests.exceptions.Timeout:
+        async with aiohttp.ClientSession() as session:
+            async with session.post("https://api.openai.com/v1/chat/completions", 
+                                  headers=headers, 
+                                  json=payload,
+                                  timeout=30) as response:
+                continous_api_time = time.time() - continous_start_time
+                
+                if response.status != 200:
+                    print(f"API Error: Status code {response.status}")
+                    response_text = await response.text()
+                    print(f"Response: {response_text}")
+                    return None, continous_api_time
+                    
+                response_json = await response.json()
+                return response_json['choices'][0]['message']['content'], continous_api_time
+    except asyncio.TimeoutError:
         print("API request timed out")
-        return None
-    except requests.exceptions.RequestException as e:
-        print(f"API request failed: {e}")
-        return None
+        return None, time.time() - continous_start_time
     except Exception as e:
         print(f"Unexpected error in continous_frame_descriptions: {e}")
-        return None
+        return None, time.time() - continous_start_time
 
-# Function to convert text to speech using OpenAI TTS-1-HD model
-def text_to_speech(text):
-    # Generating text to speech using OpenAI TTS-1-HD model.
-    spoken_response = client.audio.speech.create(
-        model="tts-1-hd",
-        voice="nova",
-        response_format="opus",
-        input=text
-    )
-
-    # Converting audio response to playable format and play the audio
-    buffer = io.BytesIO()
-    for chunk in spoken_response.iter_bytes(chunk_size = 4096):
-        buffer.write(chunk)
-    buffer.seek(0)
-
-    with sf.SoundFile(buffer, 'r') as sound_file:
-        data = sound_file.read(dtype = 'int16')
-        sd.play(data, sound_file.samplerate)
-        sd.wait()
+async def text_to_speech(text):
+    audio_start_time = time.time()
+    try:
+        # Set up WebRTC connection
+        pc, audio = await setup_webrtc()
+        
+        # Create offer
+        offer = await pc.createOffer()
+        await pc.setLocalDescription(offer)
+        
+        # Here you would typically exchange the offer/answer with the other peer
+        # For now, we'll just use the local description
+        print("Local description:", pc.localDescription.sdp)
+        
+        # Set up audio processing
+        @pc.on("track")
+        def on_track(track):
+            if track.kind == "audio":
+                # Process incoming audio
+                @track.on("ended")
+                async def on_ended():
+                    await pc.close()
+        
+        # Keep the connection alive while processing
+        await asyncio.sleep(5)  # Adjust as needed
+        
+        # Clean up
+        await pc.close()
+        audio.stop()
+        
+        return time.time() - audio_start_time
+    except Exception as e:
+        print(f"Error in text_to_speech: {e}")
+        return time.time() - audio_start_time
 
 # Initialize video capture - will be set in main function
 cap = None
 
-def process_video(video_path: str, cycle: int = 300):
+async def process_video(video_path: str, cycle: int = 300):
     """Process video in a single thread."""
     cap = cv2.VideoCapture(video_path)
     if not cap.isOpened():
@@ -184,6 +260,11 @@ def process_video(video_path: str, cycle: int = 300):
     i = 0
     last_processed_time = time.time()
     
+    # Statistics tracking
+    total_api_time = 0
+    total_audio_time = 0
+    total_processing_time = 0
+    
     try:
         while True:
             ret, frame = cap.read()
@@ -201,6 +282,7 @@ def process_video(video_path: str, cycle: int = 300):
                 last_processed_time = current_time
                 
                 try:
+                    frame_start_time = time.time()
                     _, buffer = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, 85])
                     base64_frame = base64.b64encode(buffer).decode('utf-8')
                     
@@ -208,13 +290,24 @@ def process_video(video_path: str, cycle: int = 300):
                     print(f"Time since last processed frame: {time_since_last:.2f} seconds")
                     
                     if i == 0:
-                        image_description_crnt = current_frame_descriptions(base64_frame)
+                        image_description_crnt, api_time = await current_frame_descriptions(base64_frame)
                     else:
-                        image_description_crnt = continous_frame_descriptions(base64_frame_prev, base64_frame, preview)
+                        image_description_crnt, api_time = await continous_frame_descriptions(base64_frame_prev, base64_frame, preview)
                     
                     if image_description_crnt:
                         print(f"Description: {image_description_crnt}")
-                        text_to_speech(text=image_description_crnt)
+                        print(f"API processing time: {api_time:.2f} seconds")
+                        
+                        audio_time = await text_to_speech(text=image_description_crnt)
+                        print(f"Audio processing time: {audio_time:.2f} seconds")
+                        
+                        total_processing_time = time.time() - frame_start_time
+                        print(f"Total processing time: {total_processing_time:.2f} seconds")
+                        
+                        # Update statistics
+                        total_api_time += api_time
+                        total_audio_time += audio_time
+                        
                         preview = " ".join([preview, image_description_crnt])
                         base64_frame_prev = base64_frame
                         i += 1
@@ -242,8 +335,13 @@ def process_video(video_path: str, cycle: int = 300):
         cv2.destroyAllWindows()
         print("\nVideo processing completed")
         print(f"Processed {i} frames out of {n} total frames")
-        if n > 0:
-            print(f"Processing rate: {i/(n/fps):.2f} frames per second")
+        if i > 0:
+            print(f"\nAverage processing times:")
+            print(f"API: {total_api_time/i:.2f} seconds per frame")
+            print(f"Audio: {total_audio_time/i:.2f} seconds per frame")
+            print(f"Total: {(total_api_time + total_audio_time)/i:.2f} seconds per frame")
+            if fps > 0:
+                print(f"Processing rate: {i/(n/fps):.2f} frames per second")
 
 def main():
     parser = argparse.ArgumentParser(description='Video description tool')
@@ -272,7 +370,7 @@ def main():
         else:
             cycle = args.cycle
             
-        process_video(args.video, cycle=cycle)
+        asyncio.run(process_video(args.video, cycle=cycle))
     else:
         print("Webcam mode not implemented in this version")
         return
