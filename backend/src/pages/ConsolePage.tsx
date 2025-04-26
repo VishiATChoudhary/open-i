@@ -52,6 +52,7 @@ export function ConsolePage() {
 
   const [queryResults, setQueryResults] = useState<string[]>([]);  // Add this state for storing results
   const [lastQueryTime, setLastQueryTime] = useState<number>(Date.now());  // Add this state for tracking last query time
+  const [storageStatus, setStorageStatus] = useState<{status: string, message: string} | null>(null);  // Add this state for storage status
   
   /**
    * Instantiate:
@@ -470,7 +471,7 @@ export function ConsolePage() {
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ query: "latest gemini analysis" }),
+          body: JSON.stringify({ query: "" }),
         });
 
         if (!response.ok) {
@@ -478,10 +479,17 @@ export function ConsolePage() {
         }
 
         const data = await response.json();
+        if (data.status === 'error' || !Array.isArray(data.results)) {
+          console.error('Error fetching documents:', data.message || 'No results array');
+          setQueryResults([]); // Defensive: always set to array
+          return;
+        }
+        
         setQueryResults(data.results);
         setLastQueryTime(Date.now());
       } catch (error) {
         console.error('Error polling for latest documents:', error);
+        setQueryResults([]); // Defensive: always set to array
       }
     }, 2000); // Poll every 2 seconds
 
@@ -533,6 +541,8 @@ export function ConsolePage() {
 
         // Store the Gemini response in ChromaDB
         try {
+          console.log('Attempting to store Gemini response:', text.substring(0, 100) + '...');
+          
           const storeResponse = await fetch('http://localhost:8000/store', {
             method: 'POST',
             headers: {
@@ -541,11 +551,32 @@ export function ConsolePage() {
             body: JSON.stringify({ document: text }),
           });
 
+          const storeData = await storeResponse.json();
+          console.log('Store response:', storeData);
+          
+          setStorageStatus({
+            status: storeData.status,
+            message: storeData.message
+          });
+
+          // Clear the status after 3 seconds
+          setTimeout(() => {
+            setStorageStatus(null);
+          }, 3000);
+
           if (!storeResponse.ok) {
-            console.error('Failed to store document in ChromaDB');
+            console.error('Failed to store document in ChromaDB:', storeData);
+            setStorageStatus({
+              status: 'error',
+              message: `Failed to store document: ${storeData.message || 'Unknown error'}`
+            });
           }
         } catch (error) {
           console.error('Error storing document in ChromaDB:', error);
+          setStorageStatus({
+            status: 'error',
+            message: `Error storing document: ${error instanceof Error ? error.message : 'Unknown error'}`
+          });
         }
       } catch (error) {
         console.error('Error analyzing image:', error);
@@ -910,10 +941,27 @@ export function ConsolePage() {
                     }}>
                       Last updated: {formatTimestamp(lastQueryTime)}
                     </div>
-                    {queryResults.length > 0 ? (
+                    {storageStatus && (
+                      <div style={{
+                        padding: '8px',
+                        marginBottom: '8px',
+                        borderRadius: '4px',
+                        backgroundColor: storageStatus.status === 'success' ? '#d4edda' : '#f8d7da',
+                        color: storageStatus.status === 'success' ? '#155724' : '#721c24',
+                        fontSize: '12px'
+                      }}>
+                        {storageStatus.message}
+                      </div>
+                    )}
+                    {Array.isArray(queryResults) && queryResults.length > 0 ? (
                       <ul>
                         {queryResults.map((result, index) => (
-                          <li key={index}>{result}</li>
+                          <li key={index} style={{ marginBottom: '10px' }}>
+                            <div style={{ fontSize: '12px', color: '#666', marginBottom: '4px' }}>
+                              {formatTimestamp(Date.now() - (index * 2000))}
+                            </div>
+                            {result}
+                          </li>
                         ))}
                       </ul>
                     ) : (
