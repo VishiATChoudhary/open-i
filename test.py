@@ -31,7 +31,7 @@ def current_frame_descriptions(image):
         }
 
         payload = {
-            "model": "gpt-4.1-mini",
+            "model": "gpt-4.1-nano",
             "messages": [
                 {
                     "role": "user",
@@ -82,7 +82,7 @@ def continous_frame_descriptions(prev_image, curr_image, preview):
         }
 
         payload = {
-            "model": "gpt-4.1-mini",
+            "model": "gpt-4.1-nano",
             "messages": [
                 {
                     "role": "user",
