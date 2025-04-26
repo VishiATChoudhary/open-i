@@ -112,7 +112,7 @@ export function ConsolePage() {
 
   // Initialize Gemini
   const genAI = new GoogleGenerativeAI(process.env.REACT_APP_GEMINI_API_KEY || '');
-  const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+  const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
 
   /**
    * Utility for formatting the timing of logs
@@ -532,7 +532,7 @@ export function ConsolePage() {
               data: base64Image
             }
           },
-          { text: "Describe what you see in this image in detail." }
+          { text: "Caption this image. Be very concise, especially if nothing has changed. Be very specific about any unexpected or unusual details, such as strong emotions or actions. Be sure to always mention and accurately describe any people in the scene." }
         ]);
         
         const result = response.response;
