@@ -12,6 +12,7 @@ import keyboard
 import threading
 import argparse
 from dotenv import load_dotenv
+import time
 
 # Load environment variables from .env file
 load_dotenv()
@@ -157,22 +158,37 @@ def text_to_speech(text):
 # Initialize video capture - will be set in main function
 cap = None
 
-def process_video(video_path: str, cycle: int = 5):
+def process_video(video_path: str, cycle: int = 300):
     """Process video in a single thread."""
     cap = cv2.VideoCapture(video_path)
     if not cap.isOpened():
         print("Error: Could not open video file")
         return
 
+    # Get video properties
+    fps = cap.get(cv2.CAP_PROP_FPS)
+    total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+    duration = total_frames / fps if fps > 0 else 0
+    
+    print(f"\nVideo Information:")
+    print(f"FPS: {fps}")
+    print(f"Total Frames: {total_frames}")
+    print(f"Duration: {duration:.2f} seconds")
+    print(f"Processing every {cycle} frames")
+    print(f"Expected to process ~{total_frames/cycle:.1f} frames")
+    if fps > 0:
+        print(f"Processing rate: ~{fps/cycle:.2f} frames per second")
+    
     preview = ""
     n = 0
     i = 0
+    last_processed_time = time.time()
     
     try:
         while True:
             ret, frame = cap.read()
             if not ret:
-                print("End of video reached")
+                print("\nEnd of video reached")
                 break
                 
             # Display the frame
@@ -180,11 +196,16 @@ def process_video(video_path: str, cycle: int = 5):
             
             # Process every Nth frame
             if n % cycle == 0:
+                current_time = time.time()
+                time_since_last = current_time - last_processed_time
+                last_processed_time = current_time
+                
                 try:
                     _, buffer = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, 85])
                     base64_frame = base64.b64encode(buffer).decode('utf-8')
                     
-                    print(f"\nProcessing frame {n}...")
+                    print(f"\nProcessing frame {n}/{total_frames} ({(n/total_frames*100):.1f}%)")
+                    print(f"Time since last processed frame: {time_since_last:.2f} seconds")
                     
                     if i == 0:
                         image_description_crnt = current_frame_descriptions(base64_frame)
@@ -209,7 +230,7 @@ def process_video(video_path: str, cycle: int = 5):
             
             # Break on 'q' key press
             if cv2.waitKey(1) & 0xFF == ord('q'):
-                print("User requested quit")
+                print("\nUser requested quit")
                 break
                 
     except Exception as e:
@@ -219,7 +240,10 @@ def process_video(video_path: str, cycle: int = 5):
     finally:
         cap.release()
         cv2.destroyAllWindows()
-        print("Video processing completed")
+        print("\nVideo processing completed")
+        print(f"Processed {i} frames out of {n} total frames")
+        if n > 0:
+            print(f"Processing rate: {i/(n/fps):.2f} frames per second")
 
 def main():
     parser = argparse.ArgumentParser(description='Video description tool')
