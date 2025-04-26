@@ -8,22 +8,97 @@
     </div>
 
     <!-- Features panel -->
-    <div class="absolute top-1/2 right-8 -translate-y-1/2 bg-[#FAF9F6]/95 rounded-3xl p-6 w-80 h-[60vh]">
-      <h2 class="text-xl font-semibold mb-4 text-center">Features</h2>
-      <div class="space-y-3">
-        <div class="flex justify-between items-center">
-          <span class="text-gray-500">Bäckerei in 10m rechts</span>
-          <span class="text-gray-400 font-mono">14:23:53</span>
-        </div>
-        <div class="flex justify-between items-center">
-          <span class="text-gray-500">Hund nicht an der Leine</span>
-          <span class="text-gray-400 font-mono">14:24:12</span>
-        </div>
-        <div class="flex justify-between items-center">
-          <span class="text-gray-500">Rote Ampel in 20m</span>
-          <span class="text-gray-400 font-mono">14:24:35</span>
+    <div class="absolute top-1/2 right-8 -translate-y-1/2 h-[30vh] w-100">
+      <!-- Background gradient -->
+      <div class="absolute inset-0 rounded-3xl bg-gradient-to-b from-[#FAF9F6] to-[#FAF9F6]/20"></div>
+      
+      <!-- Content -->
+      <div class="relative h-full p-6">
+        <h2 class="text-xl font-semibold mb-4 text-center">Features</h2>
+        <div class="space-y-3">
+          <TransitionGroup name="message" tag="div">
+            <div v-for="message in displayedMessages" 
+                 :key="message.id"
+                 class="flex justify-between items-center space-x-2">
+              <span class="text-gray-500">{{ message.text }}</span>
+              <span class="text-gray-400 font-mono">{{ message.timestamp }}</span>
+            </div>
+          </TransitionGroup>
         </div>
       </div>
     </div>
   </div>
-</template> 
+</template>
+
+<script setup>
+import { ref, onMounted, onUnmounted } from 'vue'
+import { messages } from '../data/dummyMessages'
+
+const displayedMessages = ref([])
+let messageInterval = null
+
+// Formatiert einen Zeitstempel im Format HH:MM:SS
+const formatTime = (date) => {
+  return date.toTimeString().split(' ')[0]
+}
+
+// Generiert eine zufällige Zahl zwischen min und max
+const getRandomInterval = (min, max) => {
+  return Math.floor(Math.random() * (max - min + 1) + min) * 1000
+}
+
+// Fügt eine neue Nachricht hinzu
+const addMessage = () => {
+  const randomMessage = messages[Math.floor(Math.random() * messages.length)]
+  const newMessage = {
+    id: Date.now(),
+    text: randomMessage,
+    timestamp: formatTime(new Date())
+  }
+  
+  displayedMessages.value.unshift(newMessage)
+  
+  // Behalte maximal 5 Nachrichten
+  if (displayedMessages.value.length > 5) {
+    displayedMessages.value.pop()
+  }
+  
+  // Plane die nächste Nachricht
+  scheduleNextMessage()
+}
+
+// Plant die nächste Nachricht
+const scheduleNextMessage = () => {
+  messageInterval = setTimeout(() => {
+    addMessage()
+  }, getRandomInterval(2, 8))
+}
+
+onMounted(() => {
+  // Starte mit einer Nachricht
+  addMessage()
+})
+
+onUnmounted(() => {
+  if (messageInterval) {
+    clearTimeout(messageInterval)
+  }
+})
+</script>
+
+<style scoped>
+.message-enter-active,
+.message-leave-active {
+  transition: all 0.5s ease;
+}
+
+.message-enter-from {
+  opacity: 0;
+  transform: translateX(30px);
+}
+
+.message-leave-to {
+  opacity: 0;
+  transform: translateX(-30px);
+}
+</style> 
