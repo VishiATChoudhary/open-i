@@ -2,11 +2,33 @@
   <div class="flex gap-4">
     <div class="flex-1 flex gap-4 items-center">
       <div class="flex-1 bg-[#F3F3F3] rounded-full px-8 h-16 flex items-center">
-        TRANSCRIPT USER INPUT VOICE
+        
       </div>
-      <div class="w-16 h-16 bg-[#F3F3F3] rounded-full flex items-center justify-center">
+      <div 
+        class="w-16 h-16 bg-[#F3F3F3] rounded-full flex items-center justify-center"
+        :class="{ 'bounce-animation': isSpeaking }"
+      >
         <img src="../assets/user.svg" alt="User" class="w-10 h-10" />
       </div>
     </div>
   </div>
-</template> 
+</template>
+
+<script setup>
+import { ref } from 'vue'
+
+const isSpeaking = ref(false)
+</script>
+
+<style scoped>
+@keyframes bounce {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.2); }
+  75% { transform: scale(0.95); }
+  100% { transform: scale(1); }
+}
+
+.bounce-animation {
+  animation: bounce 0.6s cubic-bezier(0.28, 0.84, 0.42, 1) infinite;
+}
+</style> 
