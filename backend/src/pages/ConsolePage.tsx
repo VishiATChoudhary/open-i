@@ -541,7 +541,7 @@ export function ConsolePage() {
 
         // Store the Gemini response in ChromaDB
         try {
-          console.log('Attempting to store Gemini response:', text.substring(0, 100) + '...');
+          console.log('Attempting to store Visual Model response:', text.substring(0, 100) + '...');
           
           const storeResponse = await fetch('http://localhost:8000/store', {
             method: 'POST',
@@ -594,7 +594,7 @@ export function ConsolePage() {
           setIsWebcamActive(true);
           
           // Start capturing frames every 2 seconds
-          frameIntervalRef.current = setInterval(captureFrame, 2000);
+          frameIntervalRef.current = setInterval(captureFrame, 1000);
         }
       } catch (err) {
         console.error('Error accessing webcam:', err);
@@ -635,7 +635,7 @@ export function ConsolePage() {
       <div className="content-top">
         <div className="content-title">
           <img src="/openai-logomark.svg" />
-          <span>Realtime RAG Assistant - Prepared By Adam Lucek</span>
+          <span>Audiovisual Navigation Assistant - By Team </span>
         </div>
         <div className="content-api-key">
           {!LOCAL_RELAY_SERVER_URL && (
@@ -859,7 +859,7 @@ export function ConsolePage() {
                       color: '#2c3e50',
                       fontSize: '16px',
                       fontWeight: '600'
-                    }}>Gemini Image Analysis</h4>
+                    }}>Visual Model Image Analysis</h4>
                     {imageDescription ? (
                       <p style={{ 
                         margin: '0',
@@ -895,7 +895,7 @@ export function ConsolePage() {
                         // Convert to base64
                         const base64Image = canvas.toDataURL('image/jpeg').split(',')[1];
 
-                        console.log('Sending test image to Gemini...');
+                        console.log('Sending test image to Visual Model...');
 
                         // Send to Gemini
                         const response = await model.generateContent([
@@ -911,11 +911,11 @@ export function ConsolePage() {
                         const result = response.response;
                         const text = result.text();
                         
-                        console.log('Gemini Response:', text);
+                        console.log('Visual Model Response:', text);
                         setImageDescription(text);
                       } catch (error) {
-                        console.error('Error testing Gemini:', error);
-                        setImageDescription('Error testing Gemini: ' + (error as Error).message);
+                        console.error('Error testing Visual Model:', error);
+                        setImageDescription('Error testing Visual Model: ' + (error as Error).message);
                       }
                     }}
                     style={{
@@ -928,7 +928,7 @@ export function ConsolePage() {
                       cursor: 'pointer'
                     }}
                   >
-                    Test Gemini
+                    Test Visual Model
                   </button>
                 </div>
                 <div className="documents-section">
